@@ -13,7 +13,7 @@
 #      npmjs.com open the package, then Settings > Trusted publishing, and add
 #      a GitHub Actions publisher:
 #        Organization or user: EmpirioLabs-AI
-#        Repository:           ai-sdk-tools
+#        Repository:           ai-sdk-empiriolabs
 #        Workflow filename:    publish.yml
 #        Environment:          (leave empty)
 #      Publish the next version through this workflow to confirm it works,

@@ -23,11 +23,11 @@ describe("package metadata", () => {
     expect(pkg.type).toBe("module");
     expect(pkg.exports["."]).toEqual({ types: "./dist/index.d.ts", default: "./dist/index.js" });
     expect(pkg.homepage).toBe("https://empiriolabs.ai");
-    expect(pkg.repository).toEqual({ type: "git", url: "git+https://github.com/EmpirioLabs-AI/ai-sdk-tools.git" });
-    expect(pkg.bugs.url).toBe("https://github.com/EmpirioLabs-AI/ai-sdk-tools/issues");
+    expect(pkg.repository).toEqual({ type: "git", url: "git+https://github.com/EmpirioLabs-AI/ai-sdk-empiriolabs.git" });
+    expect(pkg.bugs.url).toBe("https://github.com/EmpirioLabs-AI/ai-sdk-empiriolabs/issues");
     expect(pkg.author).toEqual({ name: "EmpirioLabs AI", email: "support@empiriolabs.ai", url: "https://empiriolabs.ai" });
     expect(pkg.publishConfig.access).toBe("public");
-    expect(pkg.engines.node).toBe(">=18");
+    expect(pkg.engines.node).toBe(">=22");
     expect(pkg.keywords).toEqual(
       expect.arrayContaining([
         "ai-sdk",

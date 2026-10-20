@@ -17,10 +17,10 @@
   "homepage": "https://empiriolabs.ai",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/EmpirioLabs-AI/ai-sdk-tools.git"
+    "url": "git+https://github.com/EmpirioLabs-AI/ai-sdk-empiriolabs.git"
   },
   "bugs": {
-    "url": "https://github.com/EmpirioLabs-AI/ai-sdk-tools/issues"
+    "url": "https://github.com/EmpirioLabs-AI/ai-sdk-empiriolabs/issues"
   },
   "author": {
     "name": "EmpirioLabs AI",
@@ -49,7 +49,7 @@
     "access": "public"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=22"
   },
   "scripts": {
     "clean": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\"",
