@@ -1,0 +1,150 @@
+# Publishes @empiriolabs/ai-sdk to npm, with a provenance statement, when a
+# version tag such as 0.1.0 is pushed. The package is packed once from the
+# tagged commit, after the typecheck and the unit tests pass.
+#
+# npm authentication, in the order it is set up:
+#
+#   1. First release: an NPM_TOKEN repository secret, a granular npm access
+#      token that can publish this package (with "Bypass two-factor
+#      authentication"). npm lets you add a trusted publisher only to a
+#      package that already exists, so the first version needs the token.
+#
+#   2. After the first release: trusted publishing (OIDC, no secret). On
+#      npmjs.com open the package, then Settings > Trusted publishing, and add
+#      a GitHub Actions publisher:
+#        Organization or user: EmpirioLabs-AI
+#        Repository:           ai-sdk-tools
+#        Workflow filename:    publish.yml
+#        Environment:          (leave empty)
+#      Publish the next version through this workflow to confirm it works,
+#      then delete the NPM_TOKEN secret and revoke the token. Without the
+#      secret, npm authenticates through trusted publishing. Trusted
+#      publishing needs npm 11.5.1 or later, which Node 24 includes.
+#
+# The tag must equal the version in package.json and PACKAGE_VERSION in
+# src/constants.ts. workflow_dispatch publishes the version in package.json at
+# the selected ref.
+
+name: Publish
+
+on:
+  push:
+    tags:
+      - '*.*.*'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build and pack
+    runs-on: ubuntu-latest
+    outputs:
+      tarball: ${{ steps.pack.outputs.tarball }}
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - name: Check out the tagged commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24'
+          package-manager-cache: false
+
+      - name: Check the tag and the version
+        id: version
+        run: |
+          version="$(node -p "require('./package.json').version")"
+          if [ "$GITHUB_REF_TYPE" = "tag" ] && [ "$version" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match package.json version $version"
+            exit 1
+          fi
+          constant="$(grep -o 'PACKAGE_VERSION = "[^"]*"' src/constants.ts | cut -d'"' -f2)"
+          if [ "$constant" != "$version" ]; then
+            echo "::error::src/constants.ts PACKAGE_VERSION ($constant) does not match package.json ($version)"
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck, build, and run unit tests
+        run: |
+          npm run typecheck
+          npm run build
+          npm test
+
+      - name: Pack
+        id: pack
+        run: |
+          tarball="$(npm pack --silent)"
+          echo "tarball=$tarball" >> "$GITHUB_OUTPUT"
+          tar -tzf "$tarball"
+
+      - name: Verify package contents
+        shell: bash
+        env:
+          TARBALL: ${{ steps.pack.outputs.tarball }}
+        run: |
+          set -euo pipefail
+          unexpected="$(tar -tzf "$TARBALL" | grep -vxE 'package/(package\.json|README\.md|LICENSE|CHANGELOG\.md|dist/.+\.(js|d\.ts))' || true)"
+          if [ -n "$unexpected" ]; then
+            echo "::error::Unexpected files in $TARBALL: $unexpected"
+            exit 1
+          fi
+
+      - name: Upload the package
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: package-tgz
+          path: ${{ steps.pack.outputs.tarball }}
+          if-no-files-found: error
+          retention-days: 7
+
+  npm:
+    name: Publish to npm
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      # Lets npm request an OIDC token for trusted publishing and the provenance signature.
+      id-token: write
+      contents: read
+    steps:
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24'
+          package-manager-cache: false
+
+      - name: Check the npm version
+        run: |
+          npm_version="$(npm --version)"
+          if ! node -e "const [a,b,c]=process.argv[1].split('.').map(Number); process.exit(a>11||(a===11&&(b>5||(b===5&&c>=1)))?0:1)" "$npm_version"; then
+            echo "::error::npm $npm_version is too old for trusted publishing; 11.5.1 or later is required"
+            exit 1
+          fi
+
+      - name: Download the package
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: package-tgz
+
+      - name: Publish with provenance
+        # With an NPM_TOKEN secret, npm uses the token; without it, trusted publishing.
+        run: |
+          if [ -n "$NPM_TOKEN" ]; then
+            npm config set //registry.npmjs.org/:_authToken "$NPM_TOKEN"
+          fi
+          npm publish "./$TARBALL" --access public --provenance
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          TARBALL: ${{ needs.build.outputs.tarball }}

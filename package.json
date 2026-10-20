@@ -1,0 +1,74 @@
+{
+  "name": "@empiriolabs/ai-sdk",
+  "version": "0.1.0",
+  "description": "EmpirioLabs AI tools for Vercel AI SDK agents: image generation, video generation, text to speech, audio transcription, generation jobs, and a model finder for the EmpirioLabs AI catalog.",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "sideEffects": false,
+  "homepage": "https://empiriolabs.ai",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/EmpirioLabs-AI/ai-sdk-tools.git"
+  },
+  "bugs": {
+    "url": "https://github.com/EmpirioLabs-AI/ai-sdk-tools/issues"
+  },
+  "author": {
+    "name": "EmpirioLabs AI",
+    "email": "support@empiriolabs.ai",
+    "url": "https://empiriolabs.ai"
+  },
+  "keywords": [
+    "ai-sdk",
+    "vercel-ai",
+    "ai-sdk-tools",
+    "empiriolabs",
+    "image-generation",
+    "video-generation",
+    "text-to-speech",
+    "transcription",
+    "agents"
+  ],
+  "files": [
+    "dist/**/*.js",
+    "dist/**/*.d.ts",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "clean": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\"",
+    "build": "npm run clean && tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "test:live": "vitest run --config vitest.live.config.ts",
+    "prepack": "npm run build"
+  },
+  "peerDependencies": {
+    "ai": "^7.0.0",
+    "zod": "^3.25.76 || ^4.1.8"
+  },
+  "devDependencies": {
+    "@ai-sdk/openai-compatible": "3.0.73",
+    "@types/node": "22.20.5",
+    "ai": "7.0.145",
+    "typescript": "7.0.2",
+    "vitest": "5.0.5",
+    "zod": "4.6.7"
+  }
+}

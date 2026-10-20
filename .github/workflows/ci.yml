@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-test-pack:
+    name: Build, test, and validate (Node ${{ matrix.node }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # AI SDK 7 supports Node.js 22 and later.
+        node: ['22', '24']
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ matrix.node }}
+          package-manager-cache: false
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Build
+        run: npm run build
+
+      - name: Run unit tests
+        run: npm test
+
+      - name: Verify package contents
+        shell: bash
+        run: |
+          set -euo pipefail
+          tarball="$(npm pack --silent)"
+          contents="$(tar -tzf "$tarball")"
+          echo "$contents"
+          for file in package/package.json package/dist/index.js package/dist/index.d.ts package/README.md package/LICENSE package/CHANGELOG.md; do
+            grep -qx "$file" <<<"$contents" || { echo "::error::$file is missing from $tarball"; exit 1; }
+          done
+          unexpected="$(grep -vxE 'package/(package\.json|README\.md|LICENSE|CHANGELOG\.md|dist/.+\.(js|d\.ts))' <<<"$contents" || true)"
+          if [ -n "$unexpected" ]; then
+            echo "::error::Unexpected files in $tarball: $unexpected"
+            exit 1
+          fi

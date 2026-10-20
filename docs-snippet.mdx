@@ -1,0 +1,43 @@
+{/* For fern/docs/pages/integrations.mdx: a subsection of "## Vercel AI SDK", after its last paragraph. */}
+
+### AI SDK tools
+
+The [`@empiriolabs/ai-sdk`](https://www.npmjs.com/package/@empiriolabs/ai-sdk) package gives AI SDK agents EmpirioLabs AI tools for image generation and editing, video generation, text to speech, transcription, and generation jobs, plus a model finder with prices. Each generation is billed to your EmpirioLabs AI account at the model's listed price; `findModels` is free.
+
+```bash
+npm install @empiriolabs/ai-sdk ai zod @ai-sdk/openai-compatible
+```
+
+```ts title="agent.ts"
+import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
+import { generateText, isStepCount } from 'ai';
+import { empiriolabsTools } from '@empiriolabs/ai-sdk';
+
+const empiriolabs = createOpenAICompatible({
+  name: 'empiriolabs',
+  baseURL: 'https://api.empiriolabs.ai/v1',
+  apiKey: process.env.EMPIRIOLABS_API_KEY,
+});
+
+const { text } = await generateText({
+  model: empiriolabs('qwen3-8-flash'),
+  tools: empiriolabsTools(),
+  stopWhen: isStepCount(4),
+  prompt:
+    'Find a cheap image model, then use it to generate one image of a lighthouse at dawn in watercolor. ' +
+    'Reply with the image link.',
+});
+
+console.log(text);
+```
+
+| Tool | What it does |
+| --- | --- |
+| `generateImage` | Generates images from a prompt, or edits the images given in `referenceImageUrls`. |
+| `generateVideo` | Generates a video from a prompt, or animates the still image given in `imageUrl`. |
+| `checkGenerationJob` | Returns a job's status and, once it is done, its output links, transcript, or error message. |
+| `textToSpeech` | Turns text into speech and returns a link to the audio. |
+| `transcribeAudio` | Transcribes an audio or video file at an `https` URL. |
+| `findModels` | Lists the models for a task (`chat`, `image`, `image-edit`, `video`, `speech`, `transcription`, `embedding`) with their prices. |
+
+When a tool call names no model, the tool uses a featured model for that task. A job that is still running after 5 minutes comes back with a `jobId`, which the agent passes to `checkGenerationJob` later. Links to generated files are signed and expire, so download anything you want to keep. The tools read your key from `EMPIRIOLABS_API_KEY`; run them on your server. Options and result shapes are in the [package README](https://github.com/EmpirioLabs-AI/ai-sdk-tools#readme).
