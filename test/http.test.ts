@@ -60,7 +60,7 @@ describe("API key", () => {
     const { fetchFn, calls } = createFetch([["GET", `${API}/models`, json({ data: [] })]]);
     await new ApiClient({ apiKey: TEST_KEY, fetch: fetchFn }).getJson("/models", { auth: false });
     expect(calls[0]!.headers.has("authorization")).toBe(false);
-    expect(calls[0]!.headers.get("user-agent")).toBe("@empiriolabs/ai-sdk/0.1.0");
+    expect(calls[0]!.headers.get("user-agent")).toBe("@empiriolabs/ai-sdk/0.1.1");
   });
 });
 

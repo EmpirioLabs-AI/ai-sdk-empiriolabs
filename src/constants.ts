@@ -2,7 +2,7 @@
 
 export const PACKAGE_NAME = "@empiriolabs/ai-sdk";
 /** Kept equal to package.json "version"; a unit test enforces it. */
-export const PACKAGE_VERSION = "0.1.0";
+export const PACKAGE_VERSION = "0.1.1";
 export const USER_AGENT = `${PACKAGE_NAME}/${PACKAGE_VERSION}`;
 
 export const BRAND = "EmpirioLabs AI";

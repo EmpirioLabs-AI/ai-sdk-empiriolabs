@@ -1,6 +1,6 @@
 {
   "name": "@empiriolabs/ai-sdk",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "EmpirioLabs AI tools for Vercel AI SDK agents: image generation, video generation, text to speech, audio transcription, generation jobs, and a model finder for the EmpirioLabs AI catalog.",
   "license": "MIT",
   "type": "module",

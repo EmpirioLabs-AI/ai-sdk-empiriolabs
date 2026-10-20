@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.1
+
+- Published from the Publish workflow through npm trusted publishing (OpenID Connect), with no stored npm token.
+
 ## 0.1.0
 
 - First release. Works with AI SDK 7 (`ai`) and Zod 3.25 or 4.
