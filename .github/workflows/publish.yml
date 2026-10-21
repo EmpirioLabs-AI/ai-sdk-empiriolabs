@@ -2,24 +2,15 @@
 # version tag such as 0.1.0 is pushed. The package is packed once from the
 # tagged commit, after the typecheck and the unit tests pass.
 #
-# npm authentication, in the order it is set up:
-#
-#   1. First release: an NPM_TOKEN repository secret, a granular npm access
-#      token that can publish this package (with "Bypass two-factor
-#      authentication"). npm lets you add a trusted publisher only to a
-#      package that already exists, so the first version needs the token.
-#
-#   2. After the first release: trusted publishing (OIDC, no secret). On
-#      npmjs.com open the package, then Settings > Trusted publishing, and add
-#      a GitHub Actions publisher:
-#        Organization or user: EmpirioLabs-AI
-#        Repository:           ai-sdk-empiriolabs
-#        Workflow filename:    publish.yml
-#        Environment:          (leave empty)
-#      Publish the next version through this workflow to confirm it works,
-#      then delete the NPM_TOKEN secret and revoke the token. Without the
-#      secret, npm authenticates through trusted publishing. Trusted
-#      publishing needs npm 11.5.1 or later, which Node 24 includes.
+# npm authenticates through trusted publishing only (OIDC, no secret). On
+# npmjs.com the package's trusted publisher is:
+#   Organization or user: EmpirioLabs-AI
+#   Repository:           ai-sdk-empiriolabs
+#   Workflow filename:    publish.yml
+#   Environment:          (empty)
+# Trusted publishing needs npm 11.5.1 or later, which Node 24 includes. The
+# publish job runs in the approval-gated `npm` environment and only publishes
+# the tarball the build job packed.
 #
 # The tag must equal the version in package.json and PACKAGE_VERSION in
 # src/constants.ts. workflow_dispatch publishes the version in package.json at
@@ -114,6 +105,7 @@ jobs:
     name: Publish to npm
     needs: build
     runs-on: ubuntu-latest
+    environment: npm
     permissions:
       # Lets npm request an OIDC token for trusted publishing and the provenance signature.
       id-token: write
@@ -139,12 +131,7 @@ jobs:
           name: package-tgz
 
       - name: Publish with provenance
-        # With an NPM_TOKEN secret, npm uses the token; without it, trusted publishing.
-        run: |
-          if [ -n "$NPM_TOKEN" ]; then
-            npm config set //registry.npmjs.org/:_authToken "$NPM_TOKEN"
-          fi
-          npm publish "./$TARBALL" --access public --provenance
+        # npm authenticates through trusted publishing only (OIDC, no secret).
+        run: npm publish "./$TARBALL" --access public --provenance
         env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           TARBALL: ${{ needs.build.outputs.tarball }}
